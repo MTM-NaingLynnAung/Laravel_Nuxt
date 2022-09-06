@@ -11,7 +11,7 @@ class ProductController extends Controller
 {
     public function index()
     {
-        return Product::orderBy('id', 'desc')->paginate(5);
+        return Product::orderBy('id', 'desc')->get();
     }
     public function show(Product $product)
     {

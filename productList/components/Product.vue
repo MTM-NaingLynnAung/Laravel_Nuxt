@@ -38,7 +38,7 @@
           <th>Image</th>
           <th>Action</th>
         </tr>
-        <tr v-for="product in products.data" :key="product.id">
+        <tr v-for="product in products" :key="product.id">
           <td>{{ product.id }}</td>
           <td>{{ product.name }}</td>
           <td>{{ product.price }}</td>
@@ -61,7 +61,7 @@ export default {
   data(){
     return {
       isEdit: false,
-      products: {},
+      products: [],
       product: {
         id: '',
         name: '',
@@ -113,6 +113,7 @@ export default {
       }.bind(this), false)
       if(this.product.image){
         reader.readAsDataURL(this.product.image)
+        console.log(reader)
       }
     },
     edit(product){
