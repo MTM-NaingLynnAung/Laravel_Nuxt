@@ -113,7 +113,6 @@ export default {
       }.bind(this), false)
       if(this.product.image){
         reader.readAsDataURL(this.product.image)
-        console.log(reader)
       }
     },
     edit(product){
