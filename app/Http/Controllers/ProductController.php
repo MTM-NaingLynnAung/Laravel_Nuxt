@@ -6,12 +6,16 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Http\Requests\ProductRequest;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
     public function index()
     {
-        return Product::orderBy('id', 'desc')->get();
+        if(request('search')){
+            return Product::where('name', 'LIKE', '%' . request('search') . '%')->orderBy('id', 'desc')->paginate(5);
+        }
+        return Product::orderBy('id', 'desc')->paginate(5);
     }
     public function show(Product $product)
     {
@@ -20,8 +24,8 @@ class ProductController extends Controller
     public function store(ProductRequest $request)
     {
         $fileName = time().'.'.$request->image->extension();
-        $request->image->move(public_path('images'), $fileName);
-        $request->image = '/images/'.$fileName;
+        Storage::putFileAs('public/images', $request->image, $fileName);
+        $request->image = 'images/'.$fileName;
         return Product::create([
             'name' => $request->name,
             'price' => $request->price,
@@ -33,20 +37,20 @@ class ProductController extends Controller
         $product = Product::find($request->id);
         $requestData = $request->all();
         if($request->hasFile('image')){
-            $filePath = public_path($product->image);
+            $filePath = "storage/".$product->image;
             if(file_exists($filePath)){
                 unlink($filePath);
             }
             $fileName = time().'.'.$request->image->extension();
-            $request->image->move(public_path('images'), $fileName);
-            $requestData['image'] = '/images/'.$fileName;
+            Storage::putFileAs('public/images', $request->image, $fileName);
+            $requestData['image'] = 'images/'.$fileName;
         }
         return $product->update($requestData);
 
     }
     public function destroy(Product $product)
     {
-        $filePath = public_path($product->image);
+        $filePath = "storage/".$product->image;
         if(file_exists($filePath)){
             unlink($filePath);
         }

@@ -3,7 +3,7 @@
    <div class="row">
      <div class="col-3 me-5">
       <h2>{{ isEdit ? 'Edit Product' : 'Create Product' }}</h2>
-      <form @submit.prevent="isEdit ? update() : store()">
+      <form @submit.prevent="isEdit ? update() : store()" enctype="multipart/form-data">
         <div class="form-group">
           <label for="">Name</label>
           <input type="text" class="form-control" v-model="product.name">
@@ -30,7 +30,13 @@
       </form>
     </div>
     <div class="col-8 ms-5">
-      <table class="table">
+      <div class="d-flex justify-content-between">
+        <button class="btn btn-primary mb-3" @click="create">Create</button>
+        <div class="me-5" @keyup="productList">
+          <input type="search" class="form-control" v-model="search" placeholder="Search ... ">
+        </div>
+      </div>
+      <table class="table" id="my-table">
         <tr>
           <th>ID</th>
           <th>Name</th>
@@ -38,12 +44,12 @@
           <th>Image</th>
           <th>Action</th>
         </tr>
-        <tr v-for="product in products" :key="product.id">
+        <tr v-for="product in products.data" :key="product.id">
           <td>{{ product.id }}</td>
           <td>{{ product.name }}</td>
           <td>{{ product.price }}</td>
           <td>
-            <img :src="imageUrl(product.image)" alt="" width="70" height="70">
+            <img :src="product.image" alt="" width="70" height="70">
           </td>
           <td>
             <button class="btn btn-sm btn-secondary text-dark" @click="edit(product)">Edit</button>
@@ -51,6 +57,13 @@
           </td>
         </tr>
       </table>
+      <b-pagination
+      v-model="currentPage"
+      :total-rows="rows"
+      :per-page="perPage"
+      aria-controls="my-table"
+      @input="paginate(currentPage)"
+    ></b-pagination>
     </div>
    </div>
   </div>
@@ -61,28 +74,49 @@ export default {
   data(){
     return {
       isEdit: false,
-      products: [],
+      products: {},
       product: {
         id: '',
         name: '',
         price: '',
-        image: ''
+        image: '',
       },
+      search: '',
       showImage: false,
       imagePreview: null,
       errors: [],
-      errorMessage: false
+      errorMessage: false,
+      perPage: null,
+      currentPage: null,
+      rows: null,
     }
   },
   methods: {
-    productList(){
-      this.$axios.get('http://127.0.0.1:8000/api/products')
+    productList(page = 1){
+      this.$axios.get(`http://127.0.0.1:8000/api/products?page=${page}&search=${this.search}`)
       .then(response => {
         this.products = response.data
-    })
+        this.currentPage = response.data.current_page
+        this.rows = response.data.total
+        this.perPage = response.data.per_page
+      })
+    },
+    paginate(page){
+      this.$axios.get('http://127.0.0.1:8000/api/products?page='+page)
+      .then(response => {
+        this.products = response.data 
+      })
     },
     imageUrl(image){
-      return `http://127.0.0.1:8000${image}`
+      return `http://127.0.0.1:8000/storage/${image}`
+    },
+    create(){
+      this.isEdit = false
+      this.product.id = this.product.name = this.product.price = this.product.image = ''
+      this.showImage = false
+      this.imagePreview = null
+      document.getElementById('image').value = ''
+      this.errorMessage = false
     },
     store(){
       let formData = new FormData();
@@ -90,7 +124,7 @@ export default {
       formData.append('name', this.product.name)
       formData.append('price', this.product.price)
       formData.append('image', this.product.image)
-       this.$axios.post('http://127.0.0.1:8000/api/products', formData)
+      this.$axios.post('http://127.0.0.1:8000/api/products', formData)
       .then(response => {
         this.productList()
         this.product = { id: '', name: '', price: '' }
